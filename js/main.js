@@ -7,7 +7,6 @@ let camera, scene, renderer;
 let plane;
 let pointer, raycaster = false;
 let spider, spiderMixer;
-let screenHelper, spiderHelper, cursorHelper;
 let cursor, cursorEdges;
 const fps = 15;
 
@@ -69,6 +68,8 @@ function init() {
     // todo: add textures
     const geometry = new THREE.BoxGeometry(800, 450, -25);
     geometry.rotateX(-Math.PI / 2);
+    geometry.computeBoundingBox();
+    geometry.boundingBox.expandByScalar(-25)
 
     plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
         color: 0xffffff,
@@ -110,15 +111,14 @@ function onPointerMove(event) {
     setTimeout(function () {
         pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
         raycaster.setFromCamera(pointer, camera);
-        const intersects = raycaster.intersectObjects(objects, false);
+        const intersects = raycaster.intersectObjects([plane], false);
 
         if (intersects.length > 0) {
             const intersect = intersects[0];
             cursor.position.copy(intersect.point).add(intersect.face.normal);
             cursorEdges.position.copy(intersect.point).add(intersect.face.normal);
             spider.scene.lookAt(intersect.point);
-            spider.scene.position.lerpVectors(spider.scene.position, intersect.point, 1/fps);
-            // todo: make sure the cursor and the spider don't leave the screen
+            spider.scene.position.lerpVectors(spider.scene.position, intersect.point, 1 / fps);
             render();
         }
     }, 1000 / fps)
