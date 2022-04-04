@@ -13,7 +13,6 @@ let spider, spiderMixer;
 let cursor, cursorEdges;
 const fps = 15;
 
-const objects = [];
 var clock = new THREE.Clock();
 
 init();
@@ -54,7 +53,6 @@ function init() {
     scene.add(cursorEdges)
 
     // spider
-    // todo: fix textures
     new GLTFLoader().load('../spider/scene.gltf', function (gltf) {
         spider = gltf;
         spiderMixer = new THREE.AnimationMixer(spider.scene);
@@ -68,21 +66,36 @@ function init() {
     pointer = new THREE.Vector2();
 
     // screen
-    // todo: fix sides of the screen
     const geometry = new RoundedBoxGeometry(800, 450, 25, 5, 20);
     geometry.rotateX(-Math.PI / 2);
     geometry.computeBoundingBox();
-    geometry.boundingBox.expandByScalar(-25);
+    geometry.boundingBox.expandByScalar(0);
+    geometry.boundingBox.set(new THREE.Vector3(
+        geometry.boundingBox.min.x + 30, geometry.boundingBox.min.y, geometry.boundingBox.min.z + 50
+    ), new THREE.Vector3(
+        geometry.boundingBox.max.x - 40, geometry.boundingBox.max.y, geometry.boundingBox.max.z - 60
+    ))
 
-    const texture = new THREE.TextureLoader().load('../textures/screen.gif');
-    plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-        map: texture,
-        side: THREE.DoubleSide
-    }));
+    const screenTexture = new THREE.TextureLoader().load('../textures/screen.gif');
+    const screenMesh = new THREE.MeshBasicMaterial({
+        map: screenTexture
+    });
+    const screenSides = new THREE.MeshBasicMaterial({
+        color: 0x222222
+    });
+
+    const materials = [
+        screenSides,
+        screenSides,
+        screenSides,
+        screenSides,
+        screenMesh,
+        screenSides,
+    ];
+
+    plane = new THREE.Mesh(geometry, materials);
     plane.position.y = -25;
-
     scene.add(plane);
-    objects.push(plane);
 
     // lights
     const ambientLight = new THREE.AmbientLight(0x606060);
@@ -136,7 +149,7 @@ function onPointerMove(event) {
 function onPointerDown(event) {
     pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
     raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObjects(objects, false);
+    const intersects = raycaster.intersectObjects([plane], false);
     if (intersects.length > 0) {
         // todo: clicked on the screen
         render();
