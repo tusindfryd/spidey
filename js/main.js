@@ -5,6 +5,11 @@ import {
 import {
     RoundedBoxGeometry
 } from './RoundedBoxGeometry.js'
+import {
+    RectAreaLightHelper
+} from './RectAreaLightHelper.js'
+import { RectAreaLightUniformsLib } from './RectAreaLightUniformsLib.js';
+
 
 let camera, scene, renderer;
 let plane;
@@ -25,6 +30,7 @@ function init() {
     camera.zoom = 2;
     camera.updateProjectionMatrix();
     scene = new THREE.Scene();
+    RectAreaLightUniformsLib.init();
     scene.background = new THREE.Color(0xf0f0f0);
 
     // cursor
@@ -53,6 +59,7 @@ function init() {
     scene.add(cursorEdges)
 
     // spider
+    // todo: fix spider textures
     new GLTFLoader().load('../spider/scene.gltf', function (gltf) {
         spider = gltf;
         spiderMixer = new THREE.AnimationMixer(spider.scene);
@@ -66,7 +73,7 @@ function init() {
     pointer = new THREE.Vector2();
 
     // screen
-    const geometry = new RoundedBoxGeometry(800, 450, 25, 5, 20);
+    const geometry = new RoundedBoxGeometry(800, 450, 25, 10, 20);
     geometry.rotateX(-Math.PI / 2);
     geometry.computeBoundingBox();
     geometry.boundingBox.expandByScalar(0);
@@ -77,11 +84,14 @@ function init() {
     ))
 
     const screenTexture = new THREE.TextureLoader().load('../textures/screen.gif');
-    const screenMesh = new THREE.MeshBasicMaterial({
-        map: screenTexture
+    const screenMesh = new THREE.MeshStandardMaterial({
+        map: screenTexture,
+       blending: THREE.MultiplyBlending, toneMapped: false, transparent: true
     });
-    const screenSides = new THREE.MeshBasicMaterial({
-        color: 0x222222
+    const screenSides = new THREE.MeshPhysicalMaterial({
+        color: 0x222222,
+        roughness: 0,
+        metalness: 0.5
     });
 
     const materials = [
@@ -98,10 +108,20 @@ function init() {
     scene.add(plane);
 
     // lights
-    const ambientLight = new THREE.AmbientLight(0x606060);
+    // todo: find the proper way of doing this
+    const intensity = 3;
+    const screenLightLeftHalf = new THREE.RectAreaLight(0x0000ff, intensity, 800 - 50, 450 - 50);
+    screenLightLeftHalf.lookAt(0,0,1)
+    scene.add(screenLightLeftHalf);
+
+    const screenLightRightHalf = new THREE.RectAreaLight(0x0000ff, intensity, 800 - 50, 450 - 50);
+    screenLightRightHalf.lookAt(0,0,0)
+    scene.add(screenLightRightHalf);
+
+    const ambientLight = new THREE.AmbientLight(0xffea00);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff);
+    const directionalLight = new THREE.DirectionalLight(0xffea00);
     directionalLight.position.set(1, 0.75, 0.5).normalize();
     scene.add(directionalLight);
 
@@ -127,6 +147,8 @@ function onWindowResize() {
 }
 
 function onPointerMove(event) {
+    // todo: act on idle cursor
+    // todo: walk faster on movement
     setTimeout(function () {
         pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
         raycaster.setFromCamera(pointer, camera);
