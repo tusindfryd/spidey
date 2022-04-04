@@ -2,6 +2,9 @@ import * as THREE from './three.module.js';
 import {
     GLTFLoader
 } from './GLTFLoader.js';
+import {
+    RoundedBoxGeometry
+} from './RoundedBoxGeometry.js'
 
 let camera, scene, renderer;
 let plane;
@@ -65,16 +68,19 @@ function init() {
     pointer = new THREE.Vector2();
 
     // screen
-    // todo: add textures
-    const geometry = new THREE.BoxGeometry(800, 450, -25);
+    // todo: fix sides of the screen
+    const geometry = new RoundedBoxGeometry(800, 450, 25, 5, 20);
     geometry.rotateX(-Math.PI / 2);
     geometry.computeBoundingBox();
-    geometry.boundingBox.expandByScalar(-25)
+    geometry.boundingBox.expandByScalar(-25);
 
+    const texture = new THREE.TextureLoader().load('../textures/screen.gif');
     plane = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        visible: true
+        map: texture,
+        side: THREE.DoubleSide
     }));
+    plane.position.y = -25;
+
     scene.add(plane);
     objects.push(plane);
 
@@ -114,12 +120,15 @@ function onPointerMove(event) {
         const intersects = raycaster.intersectObjects([plane], false);
 
         if (intersects.length > 0) {
+            document.body.style.cursor = 'none';
             const intersect = intersects[0];
             cursor.position.copy(intersect.point).add(intersect.face.normal);
             cursorEdges.position.copy(intersect.point).add(intersect.face.normal);
             spider.scene.lookAt(intersect.point);
             spider.scene.position.lerpVectors(spider.scene.position, intersect.point, 1 / fps);
             render();
+        } else {
+            document.body.style.cursor = 'default';
         }
     }, 1000 / fps)
 }
