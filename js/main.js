@@ -1,11 +1,15 @@
 import * as THREE from './three.module.js';
-import { GLTFLoader } from './GLTFLoader.js';
+import {
+    GLTFLoader
+} from './GLTFLoader.js';
 
 let camera, scene, renderer;
 let plane;
 let pointer, raycaster = false;
 let spider, spiderMixer;
+let screenHelper, spiderHelper, cursorHelper;
 let cursor, cursorEdges;
+const fps = 15;
 
 const objects = [];
 var clock = new THREE.Clock();
@@ -102,27 +106,22 @@ function onWindowResize() {
     render();
 }
 
-function lerp(v0, v1, t) {
-    return (1 - t) * v0 + t * v1;
-}
-
 function onPointerMove(event) {
-    pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
-    raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObjects(objects, false);
+    setTimeout(function () {
+        pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+        raycaster.setFromCamera(pointer, camera);
+        const intersects = raycaster.intersectObjects(objects, false);
 
-    if (intersects.length > 0) {
-        const intersect = intersects[0];
-        cursor.position.copy(intersect.point).add(intersect.face.normal);
-        cursorEdges.position.copy(intersect.point).add(intersect.face.normal);
-        // todo: make sure the cursor and the spider don't leave the screen
-        // todo: rotate the spider in the direction it's moving
-        // todo: add linear interpolation for smoother movement
-        // todo: make sure the spider follows the cursor from a distance
-        spider.scene.rotation.y = 1;
-        spider.scene.position.copy(intersect.point).add(intersect.face.normal);
-        render();
-    }
+        if (intersects.length > 0) {
+            const intersect = intersects[0];
+            cursor.position.copy(intersect.point).add(intersect.face.normal);
+            cursorEdges.position.copy(intersect.point).add(intersect.face.normal);
+            spider.scene.lookAt(intersect.point);
+            spider.scene.position.lerpVectors(spider.scene.position, intersect.point, 1/fps);
+            // todo: make sure the cursor and the spider don't leave the screen
+            render();
+        }
+    }, 1000 / fps)
 }
 
 function onPointerDown(event) {
@@ -136,8 +135,10 @@ function onPointerDown(event) {
 }
 
 function animate() {
-    if (spiderMixer) spiderMixer.update(clock.getDelta());
-    requestAnimationFrame(animate);
+    setTimeout(function () {
+        if (spiderMixer) spiderMixer.update(clock.getDelta());
+        requestAnimationFrame(animate);
+    }, 1000 / fps);
     render();
 }
 
