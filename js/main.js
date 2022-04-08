@@ -36,7 +36,7 @@ function init() {
     // invert the geometry on the x-axis so that all of the faces point inward
     sphereGeometry.scale(-1, 1, 1);
 
-    const sphereTexture = new THREE.TextureLoader().load('/textures/34222805890_f7da31e951_6k.jpg');
+    const sphereTexture = new THREE.TextureLoader().load('/spidey/textures/34222805890_f7da31e951_6k.jpg');
     const sphereMaterial = new THREE.MeshBasicMaterial({
         map: sphereTexture
     });
@@ -75,7 +75,7 @@ function init() {
     scene.add(cursorEdges)
 
     // spider
-    new GLTFLoader().load('/spider/scene.gltf', function (gltf) {
+    new GLTFLoader().load('/spidey/spider/scene.gltf', function (gltf) {
         spider = gltf;
         spiderMixer = new THREE.AnimationMixer(spider.scene);
         spiderMixer.clipAction(spider.animations[0]).play();
@@ -100,7 +100,7 @@ function init() {
         screenGeometry.boundingBox.max.x - 40, screenGeometry.boundingBox.max.y, screenGeometry.boundingBox.max.z - 60
     ))
 
-    const screenTexture = new THREE.TextureLoader().load('/textures/screen.gif');
+    const screenTexture = new THREE.TextureLoader().load('/spidey/textures/screen.gif');
     const screenMesh = new THREE.MeshPhysicalMaterial({
         map: screenTexture,
         roughness: 0,
@@ -133,7 +133,7 @@ function init() {
     scene.add(screen);
 
     // table
-    new GLTFLoader().load('/metallic_garden_table/scene.gltf', function (gltf) {
+    new GLTFLoader().load('/spidey/metallic_garden_table/scene.gltf', function (gltf) {
         table = gltf;
         let scale = 35;
         table.scene.scale.set(scale, scale, scale);
