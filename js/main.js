@@ -6,9 +6,6 @@ import {
     RoundedBoxGeometry
 } from './RoundedBoxGeometry.js'
 import {
-    RectAreaLightHelper
-} from './RectAreaLightHelper.js'
-import {
     RectAreaLightUniformsLib
 } from './RectAreaLightUniformsLib.js';
 import {
@@ -20,7 +17,7 @@ let screen, table, floor, wall;
 let pointer, raycaster = false;
 let spider, spiderMixer;
 let cursor, cursorEdges;
-const fps = 15;
+const fps = 30;
 
 var clock = new THREE.Clock();
 
@@ -29,13 +26,24 @@ animate();
 
 function init() {
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
-    camera.position.set(500, 800, 1300);
-    camera.lookAt(0, 0, 0);
-    camera.zoom = 0.5;
+    camera.position.set(0, 50, 200);
     camera.updateProjectionMatrix();
     scene = new THREE.Scene();
     RectAreaLightUniformsLib.init();
     scene.background = new THREE.Color(0xf0f0f0);
+
+    const sphereGeometry = new THREE.SphereGeometry(4000, 480, 320);
+    // invert the geometry on the x-axis so that all of the faces point inward
+    sphereGeometry.scale(-1, 1, 1);
+
+    const sphereTexture = new THREE.TextureLoader().load('../textures/34222805890_f7da31e951_6k.jpg');
+    const sphereMaterial = new THREE.MeshBasicMaterial({
+        map: sphereTexture
+    });
+
+    const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    sphereMesh.rotateY(Math.PI / 2);
+    scene.add(sphereMesh);
 
     // cursor
     let coordinatesList = [
@@ -59,6 +67,10 @@ function init() {
         color: 0xffffff
     });
     cursor = new THREE.Mesh(cursorGeometry, cursorMaterial);
+    cursor.position.y = -800;
+    cursor.position.z = -1800;
+    cursorEdges.position.y = -800;
+    cursorEdges.position.z = -1800;
     scene.add(cursor);
     scene.add(cursorEdges)
 
@@ -67,6 +79,8 @@ function init() {
         spider = gltf;
         spiderMixer = new THREE.AnimationMixer(spider.scene);
         spiderMixer.clipAction(spider.animations[0]).play();
+        spider.scene.position.y = -800;
+        spider.scene.position.z = -1800;
         scene.add(spider.scene);
     }, undefined, function (error) {
         console.error(error);
@@ -114,16 +128,17 @@ function init() {
 
     screen = new THREE.Mesh(screenGeometry, screenMaterials);
     screen.castShadow = true;
-    screen.position.y = -25;
-    screen.position.z = 200;
+    screen.position.y = -825;
+    screen.position.z = -1800;
     scene.add(screen);
 
     // table
     new GLTFLoader().load('../metallic_garden_table/scene.gltf', function (gltf) {
         table = gltf;
-        let scale = 30;
+        let scale = 35;
         table.scene.scale.set(scale, scale, scale);
-        table.scene.position.y = -1025 - 25;
+        table.scene.position.y = -2000;
+        table.scene.position.z = -2000;
         table.scene.receiveShadow = true;
         table.scene.castShadow = true;
         scene.add(table.scene);
@@ -131,62 +146,14 @@ function init() {
         console.error(error);
     });
 
-    // floor
-    const floorGeometry = new THREE.PlaneGeometry(20000, 5000);
-    floorGeometry.rotateX(-Math.PI / 2);
-    const floorTexture = new THREE.TextureLoader().load('../textures/stones.jpg');
-    floorTexture.wrapS = THREE.RepeatWrapping;
-    floorTexture.wrapT = THREE.RepeatWrapping;
-    floorTexture.repeat.set(10, 2.5);
-    const floorMesh = new THREE.MeshStandardMaterial({
-        map: floorTexture,
-        blending: THREE.MultiplyBlending,
-        toneMapped: false,
-    });
-    floor = new THREE.Mesh(floorGeometry, floorMesh);
-    floor.castShadow = true;
-    floor.receiveShadow = true;
-    floor.position.y = -1050;
-    scene.add(floor);
-
-    // walls
-    const wallGeometry = new THREE.PlaneGeometry(20000, 5000);
-    const wallTexture = new THREE.TextureLoader().load('../textures/bricks.jpg');
-    wallTexture.wrapS = THREE.RepeatWrapping;
-    wallTexture.wrapT = THREE.RepeatWrapping;
-    wallTexture.repeat.set(10, 2.5);
-    const wallMesh = new THREE.MeshStandardMaterial({
-        map: wallTexture
-    })
-    wall = new THREE.Mesh(wallGeometry, wallMesh);
-    wall.castShadow = true;
-    wall.receiveShadow = true;
-    wall.position.z = -2500;
-    scene.add(wall);
-
     // lights
-    // todo: find the proper way of doing this
-    const intensity = 30;
-    const screenLight = new THREE.RectAreaLight(0x0000ff, intensity, 800, 400);
-    screenLight.rotateX(-3 * Math.PI / 2);
-    screenLight.position.y = -25;
-    screenLight.position.z = 200;
-    scene.add(screenLight)
-    // const screenLightLeftHalf = new THREE.RectAreaLight(0x0000ff, intensity, 800 - 50, 450 - 50);
-    // screenLightLeftHalf.lookAt(0, 0, 1)
-    // scene.add(screenLightLeftHalf);
-
-    // const screenLightRightHalf = new THREE.RectAreaLight(0x0000ff, intensity, 800 - 50, 450 - 50);
-    // screenLightRightHalf.lookAt(0, 0, 0)
-    // scene.add(screenLightRightHalf);
-
     const ambientLight = new THREE.AmbientLight(0xffffff);
+    ambientLight.intensity = 1;
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xfaeba2);
-    // directionalLight.position.set(1, 0.75, 0.5).normalize();
+    const directionalLight = new THREE.DirectionalLight(0xffffff);
     directionalLight.target = screen;
-    directionalLight.intensity = 0.5;
+    directionalLight.intensity = 1.5;
     scene.add(directionalLight);
 
     renderer = new THREE.WebGLRenderer({
@@ -198,7 +165,6 @@ function init() {
     document.body.appendChild(renderer.domElement);
 
     // controls
-
     controls = new OrbitControls(camera, renderer.domElement);
     controls.listenToKeyEvents(window);
 
@@ -208,13 +174,8 @@ function init() {
 
     controls.screenSpacePanning = false;
 
-    controls.minDistance = 100;
+    controls.minDistance = 10;
     controls.maxDistance = 1000;
-
-    controls.minPolarAngle = Math.PI / 4;
-    controls.maxPolarAngle = Math.PI / 3;
-    controls.minAzimuthAngle = -Math.PI / 14;
-    controls.maxAzimuthAngle = Math.PI / 14;
 
     document.addEventListener('pointermove', onPointerMove);
     document.addEventListener('pointerdown', onPointerDown);
